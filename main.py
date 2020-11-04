@@ -39,6 +39,7 @@ def cargarScript():
         menu()
     elif entrada !="":
         try:
+            script = ""
             archivo = open(entrada, "r")
             for linea in archivo.readlines():
                 script = script + linea
@@ -56,10 +57,18 @@ def manejoAFD():
     if script == "":
         print("-> El script esta vacio")
     else:
-        AFD.manejo(script)
+        AFD.manejo(script,True)
     menu()
 def pilaInteractiva():
-    print()
+    global script
+    tokens = []
+    if script == "":
+        print("-> El script esta vacio")
+    else:
+        tokens=AFD.manejo(script, False)
+        for i in range(len(tokens)):
+            print(tokens[i])
+    menu()
 
 def generarDiagrama():
     print()
