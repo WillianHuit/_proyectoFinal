@@ -9,8 +9,8 @@ reservado = [["let","tk_variable","palabra reservada variable"],["var","tk_varia
              ["const","tk_variable","palabra reservada variable"],["if","tk_if","palabra reservada if"],
              ["while","tk_while","Palabra reservada while"],["foreach","tk_for","Palabra reservada for"],
              ["switch","tk_switch","Palabra reservada switch"],
-             ["(","tk_parentesis","parentesis de apertura"],[")","tk_parentesis","parentesis de cierre"],["{","tk_corchete","corchete de apertura"],
-             ["}","tk_corchete","corchete de cierre"],[";","tk_comillas","Simbolo delimitador"],
+             ["(","tk_parentesisA","parentesis de apertura"],[")","tk_parentesisC","parentesis de cierre"],["{","tk_corcheteA","corchete de apertura"],
+             ["}","tk_corcheteC","corchete de cierre"],[";","tk_puntoComa","Simbolo delimitador"],
              ["=>","tk_flecha","Simbolo flecha"],["=","tk_igualdad","Simbolo de igualdad"],[":","tk_puntos","Simbolo de continuidad"],[",","tk_coma","Simbolo separador"],
              ["break","tk_break","Finaliza un caso"],["case","tk_case","Opción de un switch"],["default","tk_default","Opción Switch"]]
 tokens = []
