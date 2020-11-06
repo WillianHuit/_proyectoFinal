@@ -1,9 +1,12 @@
-if ( id ) { /* Contenido del if */ 
-while ( id ) { /* Contenido del while */ 
-foreach ( elemento in coleccion ) { /* Contenido del for */ 
-var nuevo = "Nel"
+if(flag) {
+    var nuevo = 1;
+    var uno = 2;
+    var dos = 3;
+    let tres = 4;
 }
-}
-}
+while(true){
 
+}
+if(true){
 
+}

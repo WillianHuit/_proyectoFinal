@@ -70,9 +70,60 @@ def pilaInteractiva():
     menu()
 
 def generarDiagrama():
-    print()
+    global script
+    tokens = []
+    graph = "graph diagramaBloques { rankdir=LR  \n"
+    ids = ""
+    conexiones = ""
+    anterior = ""
+    partida = ""
+    sentencia = ""
+    anterior_sentencia = ""
+    if script == "":
+        print("-> El script esta vacio")
+    else:
+        tokens = AFD.manejo(script, False)
 
+    estado = 0
+    contador = 1
+    for i in range(len(tokens)):
+        if estado == 0:
+            if tokens[i][1]=="tk_variable":
+                ids ="\"n"+str(contador)+"\"[label=\"Asignacion: "+tokens[i+1][0]+"\" , shape=\"box\"];\n"+ids
 
+                if anterior !="":
+                    conexiones = anterior+"--"+"\"n"+str(contador)+"\";\n"+conexiones
+                    anterior=""
+                anterior = "\"n" + str(contador)+"\""
+                contador += 1
+            if tokens[i][1]=="tk_for" or tokens[i][1]=="tk_if" or tokens[i][1]=="tk_while":
+                ids = "\"n" + str(contador) + "\"[label=\"Sentencia: " + tokens[i][0] + "\" , shape=\"box\"];\n" + ids
+
+                if anterior != "":
+                    conexiones = anterior + "--" + "\"n" + str(contador) + "\";\n" + conexiones
+                    anterior = ""
+                anterior = "\"n" + str(contador) + "\""
+                sentencia = anterior
+                contador += 1
+                estado = 1
+            if tokens[i][1]=="}":
+                sentencia = ""
+        if estado == 1:
+            if tokens[i][1] == "tk_idVariable" or tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or tokens[i][1] == "tk_cadena":
+                ids = "\"n" + str(contador) + "\"[label=\"Sentencia: " + tokens[i][0] + "\" , shape=\"box\"];\n" + ids
+                if anterior_sentencia !="":
+                    conexiones = anterior_sentencia+"--"+"\"n"+str(contador)+"\";\n"+conexiones
+                    anterior_sentencia=""
+                anterior_sentencia = "\"n" + str(contador)+"\""
+                contador += 1
+            if tokens[i][1]=="tk_parentesisA":
+                estado = 0
+    graph = graph +ids+ conexiones + "}"
+    file = open("diagrama.dot", "w")
+    file.write(graph)
+    file.close()
+    print("-> Se ha generado el documento tipo dot, revisa el directorio")
+    menu()
 def gramatica(tokens):
     pila = ["S","#"]
     foreach= False
@@ -124,7 +175,7 @@ def gramatica(tokens):
                     pila[0:1] = ["LLAMADA_FUNCION"]
                     pilaString = makePilaString(pila)
                     print(pilaString +"|(Λ,Λ,S;C,LLAMADA_FUNCION)")
-                    estado = 1
+                    estado = 5
                 else:
                     entrada = input()
                     pila[0:1] = []
@@ -137,6 +188,8 @@ def gramatica(tokens):
                     pilaString = makePilaString(pila)
                     print(pilaString + "|(C,}, };C,},S)")
                     entrada = input()
+                if pila[0] =="CASE":
+                    estado = 3
 
         if estado == 1:
             if pila[0] == "ASIGNACION":
@@ -175,6 +228,21 @@ def gramatica(tokens):
                     entrada = input()
                     pilaString = makePilaString(pila)
                     print(pilaString + "|(C,"+tokens[i][1]+", "+tokens[i][1]+";C,"+tokens[i][1]+" , Λ)")
+                elif tokens[i][1]=="tk_parentesisA":
+                    entrada = input()
+                    pila[0:1] = []
+                    pila[0:1] = ["FUNCION"]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,VALOR, VALOR;C,VALOR , FUNCION")
+                    pila[0:1] = ["tk_idFuncion","(","LISTA_PARAMETRO",")","=>","{","S","}"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,FUNCION, FUNCION;C,FUNCION , tk_idFuncion(LISTA_PARAMETRO)=>{S}")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_idFuncion, tk_idFuncion;C,tk_idFuncion , Λ")
+                    estado = 4
             if pila[0] == ";" and tokens[i][1]=="tk_puntoComa":
                 pila[0:1] = []
                 entrada = input()
@@ -255,6 +323,298 @@ def gramatica(tokens):
                 pilaString = makePilaString(pila)
                 print(pilaString + "|(C,{, {;C,}, Λ")
                 faltaCierre = faltaCierre + 1
+                estado = 0
+        if estado == 3:
+            if pila[0] == "SWITCH":
+                entrada = input()
+                pila[0:1] = []
+                pila = ["tk_switch","(","VALOR_TIPO2",")","{","CASE","}"] + pila
+                #tk_switch(VALOR_TIPO2){CASE}
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,SWITCH, SWITCH;C,SWITCH , tk_switch(VALOR_TIPO2){CASE})")
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,tk_switch, tk_switch;C,tk_switch, Λ")
+
+            if pila[0] == "(" and tokens[i][1]=="tk_parentesisA":
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,(, (;C,(, Λ")
+            if pila[0]=="VALOR_TIPO2":
+                if tokens[i][1]=="tk_booleano" or tokens[i][1]=="tk_idVariable":
+                    entrada = input()
+                    pila[0:1] = [tokens[i][1]]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,VALOR_TIPO2, VALOR_TIPO2;C,VALOR_TIPO2 , "+tokens[i][1]+")")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,"+tokens[i][1]+", "+tokens[i][1]+";C,"+tokens[i][1]+" , Λ)")
+
+            if pila[0]==")" and tokens[i][1]=="tk_parentesisC":
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,), );C,), Λ")
+
+            if pila[0]=="{" and tokens[i][1]=="tk_corcheteA":
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,{, {;C,}, Λ")
+                faltaCierre = faltaCierre + 1
+
+            if pila[0]=="CASE":
+                if tokens[i][1]=="tk_case":
+                    entrada = input()
+                    pila[0:1] = ["tk_case","VALOR",":","S","CASE"]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,CASE, CASE;C,CASE, tk_case VALOR:S CASE")
+                    entrada = input()
+                    pila[0:1] = []
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_case, tk_case;C,tk_case, Λ")
+                if tokens[i][1] == "tk_default":
+                    entrada = input()
+                    pila[0:1] = ["tk_default", ":", "S", "CASE"]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,CASE, CASE;C,CASE, tk_default:S CASE")
+                    entrada = input()
+                    pila[0:1] = []
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_default, tk_default;C,tk_default, Λ")
+                if tokens[i][1] == "tk_break":
+                    entrada = input()
+                    pila[0:1] = ["tk_break", ";"]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,CASE, CASE;C,CASE, tk_break;")
+                    entrada = input()
+                    pila[0:1] = []
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_break, tk_break;C,tk_break, Λ")
+
+                if pila[1] == "}":
+                    if i == len(tokens)-1:
+                        entrada = input()
+                        pila[0:1] = []
+                        pilaString = makePilaString(pila)
+                        print(pilaString + "|(C,CASE, CASE;C,CASE, Λ")
+                    else:
+                        if i<len(tokens)-1:
+                            if tokens[i + 1][1] == "tk_corcheteC":
+                                entrada = input()
+                                pila[0:1] = []
+                                pilaString = makePilaString(pila)
+                                print(pilaString + "|(C,CASE, CASE;C,CASE, Λ")
+
+                if tokens[i][1] == "tk_corcheteC" and pila[0] == "}" and faltaCierre > 0:
+                    faltaCierre = faltaCierre - 1
+                    entrada = input()
+                    pila[0:1] = ["S"]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,}, };C,},S)")
+                    estado=0
+
+            if pila[0]=="VALOR":
+                if tokens[i][1]=="tk_booleano" or tokens[i][1]=="tk_numerico" or tokens[i][1]=="tk_cadena":
+                    entrada = input()
+                    pila[0:1] = [tokens[i][1]]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,VALOR, VALOR;C,VALOR , "+tokens[i][1]+")")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,"+tokens[i][1]+", "+tokens[i][1]+";C,"+tokens[i][1]+" , Λ)")
+            if pila[0] == ";" and tokens[i][1]=="tk_puntoComa":
+                pila[0:1] = []
+                entrada = input()
+                pila = ["S","CASE"] + pila
+                pilaString = makePilaString(pila)
+                estado = 0
+                print(pilaString + "|(C,;, ;;C,; , S)")
+                entrada = input()
+
+            if pila[0] == ":" and tokens[i][1]=="tk_puntos":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                estado = 0
+                print(pilaString + "|(C,:, :;C,: , Λ)")
+        if estado == 4:
+            #Λ
+            if tokens[i][1]=="tk_parentesisA" and pila[0]=="(":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,(, (;C,( , Λ)")
+            if tokens[i][1]=="tk_coma"or tokens[i][1]=="tk_parentesisC"  and pila[0]==",":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,,, ,;C,, , Λ)")
+                if tokens[i][1]=="tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO,;C,LISTA_PARAMETRO , PARAMETRO)")
+            if pila[0]=="LISTA_PARAMETRO":
+                if tokens[i][1] == "tk_idVariable" or tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or tokens[i][1] == "tk_cadena":
+
+                    pila[0:1] = ["PARAMETRO", ",","LISTA_PARAMETRO"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO;C,LISTA_PARAMETRO , PARAMETRO, LISTA_PARAMETRO)")
+                if pila[0] == ",":
+                    if tokens[i][1]=="tk_parentesisC" or tokens[i][1]=="tk_coma":
+                        pila[0:1] = []
+                        entrada = input()
+                        pilaString = makePilaString(pila)
+                        print(pilaString + "|(C,,, ,;C,, , Λ)")
+                if tokens[i][1]=="tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO,;C,LISTA_PARAMETRO , PARAMETRO)")
+            if pila[0]=="PARAMETRO":
+                if tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or tokens[i][1] == "tk_cadena":
+                    pila[0:1] = ["VALOR"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C ,PARAMETRO , VALOR)")
+                elif tokens[i][1] == "tk_idVariable":
+                    pila[0:1] = ["tk_idVariable"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C ,PARAMETRO , tk_idVariable)")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_idVariable, tk_idVariable;C ,tk_idVariable , Λ)")
+                elif tokens[i][1]=="tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C,PARAMETRO , Λ)")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,), );C,) , Λ)")
+            if tokens[i][1] == "tk_parentesisC" and pila[0]==")":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,PARAMETRO, PARAMETRO;C,PARAMETRO , Λ)")
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,), );C,) , Λ)")
+            if pila[0] == "VALOR":
+                if tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or tokens[i][1] == "tk_cadena":
+                    entrada = input()
+                    pila[0:1] = [tokens[i][1]]
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,VALOR, VALOR;C,VALOR , " + tokens[i][1] + ")")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C," + tokens[i][1] + ", " + tokens[i][1] + ";C," + tokens[i][1] + " , Λ)")
+            if pila[0]=="=>" and tokens[i]=="tk_flecha":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,=>, =>;C,=> , Λ)")
+            if pila[0] == "{" and tokens[i][1] == "tk_corcheteA":
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,{, {;C,}, Λ")
+                faltaCierre = faltaCierre + 1
+                estado = 0
+        if estado == 5:
+            if pila[0] == "LLAMADA_FUNCION":
+                entrada = input()
+                pila[0:1] = []
+                pila = ["tk_idFUncion","(","LISTA_PARAMETRO",")",";"] + pila
+                pilaString = makePilaString(pila)
+                print(pilaString +"|(C, LLAMADA_FUNCION, LLAMADA_FUNCION;C, LLAMADA_FUNCION, tk_idFUncion(LISTA_PARAMETRO);)")
+                entrada = input()
+                pila[0:1] = []
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C, tk_idFUncion, tk_idFUncion;C, tk_idFUncion, Λ)")
+            if tokens[i][1] == "tk_parentesisA" and pila[0] == "(":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,(, (;C,( , Λ)")
+            if tokens[i][1] == "tk_coma" or tokens[i][1] == "tk_parentesisC" and pila[0] == ",":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,,, ,;C,, , Λ)")
+                if tokens[i][1] == "tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO,;C,LISTA_PARAMETRO , PARAMETRO)")
+            if pila[0] == "LISTA_PARAMETRO":
+                if tokens[i][1] == "tk_idVariable" or tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or \
+                        tokens[i][1] == "tk_cadena":
+                    pila[0:1] = ["PARAMETRO", ",", "LISTA_PARAMETRO"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(
+                        pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO;C,LISTA_PARAMETRO , PARAMETRO, LISTA_PARAMETRO)")
+                if pila[0] == ",":
+                    if tokens[i][1] == "tk_parentesisC" or tokens[i][1] == "tk_coma":
+                        pila[0:1] = []
+                        entrada = input()
+                        pilaString = makePilaString(pila)
+                        print(pilaString + "|(C,,, ,;C,, , Λ)")
+                if tokens[i][1] == "tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,LISTA_PARAMETRO, LISTA_PARAMETRO,;C,LISTA_PARAMETRO , PARAMETRO)")
+            if pila[0] == "PARAMETRO":
+                if tokens[i][1] == "tk_booleano" or tokens[i][1] == "tk_numerico" or tokens[i][1] == "tk_cadena":
+                    pila[0:1] = ["VALOR"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C ,PARAMETRO , VALOR)")
+                elif tokens[i][1] == "tk_idVariable":
+                    pila[0:1] = ["tk_idVariable"]
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C ,PARAMETRO , tk_idVariable)")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,tk_idVariable, tk_idVariable;C ,tk_idVariable , Λ)")
+                elif tokens[i][1] == "tk_parentesisC":
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,PARAMETRO, PARAMETRO;C,PARAMETRO , Λ)")
+                    pila[0:1] = []
+                    entrada = input()
+                    pilaString = makePilaString(pila)
+                    print(pilaString + "|(C,), );C,) , Λ)")
+            if tokens[i][1] == "tk_parentesisC" and pila[0] == ")":
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,PARAMETRO, PARAMETRO;C,PARAMETRO , Λ)")
+                pila[0:1] = []
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,), );C,) , Λ)")
+            if pila[0]==";" and tokens[i][1]=="tk_puntoComa":
+                pila[0:1] = ["S"]
+                entrada = input()
+                pilaString = makePilaString(pila)
+                print(pilaString + "|(C,;, :;C,; , S)")
                 estado = 0
 
 def makePilaString(pila):

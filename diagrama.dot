@@ -1,0 +1,15 @@
+graph diagramaBloques { rankdir=LR  
+"n7"[label="Sentencia: if" , shape="box"];
+"n6"[label="Sentencia: while" , shape="box"];
+"n5"[label="Asignacion: tres" , shape="box"];
+"n4"[label="Asignacion: dos" , shape="box"];
+"n3"[label="Asignacion: uno" , shape="box"];
+"n2"[label="Asignacion: nuevo" , shape="box"];
+"n1"[label="Sentencia: if" , shape="box"];
+"n6"--"n7";
+"n5"--"n6";
+"n4"--"n5";
+"n3"--"n4";
+"n2"--"n3";
+"n1"--"n2";
+}
